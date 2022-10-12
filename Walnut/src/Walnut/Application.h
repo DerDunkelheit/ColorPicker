@@ -10,6 +10,7 @@
 #include "imgui.h"
 #include "vulkan/vulkan.h"
 
+class WindowFlagEvent;
 class Event;
 
 void check_vk_result(VkResult err);
@@ -70,6 +71,9 @@ namespace Walnut {
 	private:
 		void Init();
 		void Shutdown();
+
+		bool HandleGLFWFlagEvent(const WindowFlagEvent& actionEvent);
+		
 	private:
 		ApplicationSpecification m_Specification;
 		GLFWwindow* m_WindowHandle = nullptr;

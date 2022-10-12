@@ -18,6 +18,7 @@
 
 // Emedded font
 #include "Event.h"
+#include "GLFWWindowEvents.h"
 #include "imgui_internal.h"
 #include "KeyEvents.h"
 #include "ImGui/Roboto-Regular.embed"
@@ -422,6 +423,7 @@ namespace Walnut {
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		if (!m_Specification.ParentWindow) glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 		if (!m_Specification.CanResize) glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
 		m_WindowHandle = glfwCreateWindow(m_Specification.Width, m_Specification.Height, m_Specification.Name.c_str(), NULL, NULL);
 
 		glfwSetWindowUserPointer(m_WindowHandle, &m_Specification);
@@ -531,7 +533,7 @@ namespace Walnut {
 		// Load default font
 		ImFontConfig fontConfig;
 		fontConfig.FontDataOwnedByAtlas = false;
-		ImFont* robotoFont = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoRegular, sizeof(g_RobotoRegular), 20.0f, &fontConfig);
+		ImFont* robotoFont = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoRegular, sizeof(g_RobotoRegular), 16.0f, &fontConfig);
 		io.FontDefault = robotoFont;
 
 		// Upload Fonts
@@ -595,6 +597,20 @@ namespace Walnut {
 		glfwTerminate();
 
 		g_ApplicationRunning = false;
+	}
+
+	bool Application::HandleGLFWFlagEvent(const WindowFlagEvent& actionEvent)
+	{
+		bool handled = false;
+
+		if (actionEvent.GetFlagName() == "StayOnTop")
+		{
+			glfwSetWindowAttrib(m_WindowHandle,GLFW_FLOATING, actionEvent.GetValue());
+			
+			handled = true;
+		}
+
+		return handled;
 	}
 
 	void Application::Run()
@@ -732,6 +748,12 @@ namespace Walnut {
 
 	void Application::OnEvent(Event& event)
 	{
+		EventDispatcher dispatcher(event);
+		if (dispatcher.Dispatch<WindowFlagEvent>(BIND_EVENT_FN(Application::HandleGLFWFlagEvent)))
+		{
+			return;
+		}
+		
 		for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
 		{
 			(*--it)->OnEvent(event);

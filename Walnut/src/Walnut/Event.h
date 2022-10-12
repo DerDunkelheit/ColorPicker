@@ -14,6 +14,7 @@ enum class EventType
     None = 0,
     ActionEvent,
     KeyPressed, KeyReleased, KeyTyped,
+    GLFWFlag,
 };
 
 enum EventCategory
@@ -22,6 +23,7 @@ enum EventCategory
     EventCategoryActionEvents = BIT(1),
     EventCategoryInput = BIT(2),
     EventCategoryKeyboard = BIT(3),
+    EventCategoryGLFW= BIT(3),
 };
 
 #define EVENT_CLASS_TYPE(type) static EventType GetStaticType() { return EventType::##type; }\

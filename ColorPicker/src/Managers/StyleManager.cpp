@@ -2,6 +2,8 @@
 
 #include <imgui.h>
 
+#include "../Objects/Objects.h" //TODO: fix include
+
 namespace Managers
 {
     StyleManager::~StyleManager()
@@ -33,5 +35,15 @@ namespace Managers
         style.Colors[ImGuiCol_ButtonHovered] = ImColor(40,40,40);
 
         style.Colors[ImGuiCol_Border] = ImColor(0, 0, 0, 255);
+    }
+
+    ImVec4 StyleManager::GetColorThemeBasedOnColor(const Objects::Color& color)
+    {
+        if (color.r > 150 && color.g > 150 && color.b > 150)
+        {
+            return {0,0,0, 255};
+        }
+
+        return {255,255,255, 255};
     }
 }

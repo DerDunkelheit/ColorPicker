@@ -7,6 +7,7 @@
 #include <Walnut/Input/Input.h>
 
 #include "ImGuiUtils.h"
+#include "RenderUtils.h"
 #include "Events/ActionEvent.h"
 #include "ServiceLocator.h"
 #include "Managers/ColorsManager.h"
@@ -14,25 +15,35 @@
 #include "Managers/StyleManager.h"
 #include "Managers/CursorManager.h"
 #include "Walnut/KeyEvents.h"
+#include "Managers/AppBehaviourManager.h"
+#include "Walnut/GLFWWindowEvents.h"
+#include "Walnut/Random.h"
 
 //TODO: to separate file.
 #define BIND_EVENT_FN(x) std::bind(&x, this, std::placeholders::_1)
 
-// windows toggles todo: to style manager
 static bool isDemoWindowOpened = false;
 static bool isGuidWindowOpened = false;
 static bool isAboutWindowOpened = false;
+static bool isTextWindowOpened = false;
+
+static bool isImageRenderingEnable = false;
 
 class ColorPickerLayer : public Walnut::Layer
 {
 public:
 	ColorPickerLayer(const ServiceLocator::ManagerLocator& managerLocator)
-		:mManagerLocator(managerLocator) { }
+	{
+		mStyleManager = managerLocator.resolve<Managers::StyleManager>();
+		mCursorManager = managerLocator.resolve<Managers::CursorManager>();
+		mColorsManager = managerLocator.resolve<Managers::ColorsManager>();
+		mAppBehaviourManager = managerLocator.resolve<Managers::AppBehaviourManager>();
+	}
 	
 	virtual void OnAttach() override
 	{
 		using namespace Managers;
-		mManagerLocator.resolve<StyleManager>()->SetAppLookPreferences();
+		mStyleManager->SetAppLookPreferences();
 	}
 	
 	virtual void OnUIRender() override
@@ -40,36 +51,40 @@ public:
         ImGui::Begin("ColorPicker", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNavInputs);
         {
         	Objects::CursorPoint cursorPoint;
-        	mManagerLocator.resolve<Managers::CursorManager>()->FillCursorPoint(cursorPoint);
+        	mCursorManager->FillCursorPoint(cursorPoint);
         	
 	        char buf[64];
-	        sprintf_s(buf, "Mouse Pos: x: %d, y: %d", cursorPoint.x, cursorPoint.y);
-	        ImGui::Text(buf);
+	        sprintf_s(buf, "[%d, %d]", cursorPoint.x, cursorPoint.y);
 	        
 		    char colorBuf[64];
         	Objects::Color color = cursorPoint.color;
 		    sprintf_s(colorBuf, "%d, %d, %d", color.r, color.g, color.b);
-		    ImGui::Text(colorBuf);
-        	
-		   	ImGui::ColorButton("MyColor", ImVec4((float)color.r / 255, (float)color.g / 255, (float)color.b / 255, 255), 0,ImVec2(75, 75));
+
+        	const auto& colorPreviewInfo = mStyleManager->GetColorPreviewUIInfo();
+		   	ImGui::ColorButton("MyColor", ImVec4((float)color.r / 255, (float)color.g / 255, (float)color.b / 255, 255),
+		   		0,ImVec2(colorPreviewInfo.mXSize, colorPreviewInfo.mYSize));
 
             ImGui::SameLine();
-            ImGui::BeginChild("##ZoomField", ImVec2(120, 120), true);
+        	const auto& zoomRegionUIInfo = mStyleManager->GetZoomRegionUIInfo();
+            ImGui::BeginChild("##ZoomField", ImVec2(zoomRegionUIInfo.mXSize, zoomRegionUIInfo.mYSize), true);
             {
-                ImGui::Text("TODO: implement\nzooming...");
+        		RenderMousePosition();
+
+        		if (mImage)
+        			ImGui::Image(mImage->GetDescriptorSet(), { static_cast<float>(mImage->GetWidth()), static_cast<float>(mImage->GetHeight()) });
             }
             ImGui::EndChild();
             
             //-----------------------------------------------------------
             ImGui::SameLine();
             ImGui::PushStyleColor(ImGuiCol_Border, ImColor(80, 0, 0, 255).Value);
-            ImGui::BeginChild("##ColorList", ImVec2(200, 120), true);
+        	const auto& pickedColorsUIInfo = mStyleManager->GetPickedColorsUIInfo();
+            ImGui::BeginChild("##ColorList", ImVec2(pickedColorsUIInfo.mXSize, pickedColorsUIInfo.mYSize), true);
             {
-                const auto colorManager = mManagerLocator.resolve<Managers::ColorsManager>();
-                for (int i = 0; i < colorManager->GetPickedColors().size(); i++)
+                for (int i = 0; i < mColorsManager->GetPickedColors().size(); i++)
                 {
-	                const bool selected = colorManager->GetSelectedColorIndex() == i;
-                	auto pickedColors = colorManager->GetPickedColors();
+	                const bool selected = mColorsManager->GetSelectedColorIndex() == i;
+                	auto pickedColors = mColorsManager->GetPickedColors();
                     const Objects::Color& currentColor = pickedColors[i];
 
                 	//todo: string in render loop.
@@ -77,11 +92,13 @@ public:
                     
                     if (ImGui::Selectable(label.data()))
                     {
-                        colorManager->SetSelectedColor(i);
+                        mColorsManager->SetSelectedColor(i);
                     }
 
                 	if (ImGui::BeginPopupContextItem())
                 	{
+                		mColorsManager->SetSelectedColor(i);
+                		
                 		//TODO: implement popup logic
                 		ImGui::Text("This a popup for %d, %d, %d", currentColor.r, currentColor.g, currentColor.b);
                 		if (ImGui::Button("Copy to clipboard")) ImGui::CloseCurrentPopup();
@@ -94,47 +111,110 @@ public:
                     if (selected)
                     {
                         ImGuiUtils::SelectableColor(IM_COL32(currentColor.r, currentColor.g, currentColor.b, 255));
-                        ImGuiUtils::SelectedColor(IM_COL32(255, 255, 255, 255));
+                        ImGuiUtils::SelectedColor(ImGui::GetColorU32(mStyleManager->GetColorThemeBasedOnColor(currentColor)));
                     }
                     else
                     {
-                        //TODO change selected border to dark when color is to bright.
                         ImGuiUtils::SelectableColor(IM_COL32(currentColor.r, currentColor.g, currentColor.b, 255));
                     }
 
                     ImGui::SameLine();
-                    //TODO change color text to dark when color is to bright.
                     char colorBuf[64];
                     sprintf_s(colorBuf, "%d, %d, %d", currentColor.r, currentColor.g, currentColor.b);
-                    ImGui::Text(colorBuf);
+                	ImGui::TextColored(mStyleManager->GetColorThemeBasedOnColor(currentColor), colorBuf);
                 }
             }
             ImGui::PopStyleColor();
             ImGui::EndChild();
+
+        	// to be hones, looks like hack...
+			ImGui::SetCursorPosY(ImGui::GetContentRegionAvail().y / 2 - 80);
+        	ImGui::Text(colorBuf);
+        	ImGui::Text(buf);
+        	ImGui::SetCursorPosY(ImGui::GetContentRegionAvail().y / 2 );
             //-----------------------------------------------------------
 
             //-------------------------------------------------------------------
-            ImGuiUtils::CustomSpacing(10);
             const char* items[] = { "RGB" };
             static int item_current = 0;
-            ImGui::PushItemWidth(75); //TODO: we use 75 like with color button, replace it to manager.
+            ImGui::PushItemWidth(mStyleManager->GetColorsComboWidth());
             ImGui::Combo("##ColorOptions", &item_current, items, IM_ARRAYSIZE(items));
 
             ImGui::SameLine();
-            ImGui::PushItemWidth(120); // same todo:
+            ImGui::PushItemWidth(mStyleManager->GetHotkeyWidth());
             ImGui::Text("Hotkey: X");
 
             ImGui::SameLine();
-            ImGui::Button("Copy value", ImVec2(ImGui::GetContentRegionAvail().x, 25));
+            if ( ImGui::Button("Copy value", ImVec2(ImGui::GetContentRegionAvail().x, 25))) { }
             ImGuiUtils::CustomSpacing(5);
             ImGui::Separator();
 			//-------------------------------------------------------------------
+
+        	ImGui::BeginChild("##PreviewColorRegion", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
+        	{
+        		ImGui::ColorButton("PreviewColor", ImVec4(255 /255, 255/255, 255/ 255, 255),
+				   0,ImVec2(96, 54));
+
+        		ImGui::SameLine();
+        		ImGui::BeginChild("##test", ImVec2(ImGui::GetContentRegionAvail().x, 54), true);
+        		{
+        			ImGuiUtils::CustomSpacing(3);
+        			
+        			static int e = 0;
+        			ImGui::RadioButton("RGB", &e, 0); ImGui::SameLine(0,25);
+        			ImGui::RadioButton("HSV", &e, 1); ImGui::SameLine(0,25);
+        			ImGui::RadioButton("HSL", &e, 2);
+        		}
+        		ImGui::EndChild();
+
+        		static int i1 = 0;
+        		static int i2 = 0;
+        		static int i3 = 0;
+        		static int maxVal = 255; //TODO: get from manager based on current color displaying format
+        								//TODO: get format for slider from manager based on color format as well.
+        		static float sliderSize = 300;
+        		ImGui::SetCursorPosX(ImGui::GetWindowSize().x / 2 - sliderSize / 2);
+        		ImGui::PushItemWidth(sliderSize);
+        		if (ImGui::SliderInt("##first slider", &i1, 0, maxVal, "R: %d"))
+        		{
+        			if (i1 > maxVal) i1 = maxVal;
+        		}
+        		ImGui::SameLine(); ImGuiUtils::HelpMarker("CTRL+click to input value.");
+        		ImGui::SetCursorPosX(ImGui::GetWindowSize().x / 2 - sliderSize / 2);
+        		ImGui::PushItemWidth(sliderSize);
+        		if (ImGui::SliderInt("##second slider", &i2, 0, maxVal, "G: %d"))
+        		{
+        			if (i2 > maxVal) i2 = maxVal;
+        		}
+        		ImGui::SetCursorPosX(ImGui::GetWindowSize().x / 2 - sliderSize / 2);
+        		ImGui::PushItemWidth(sliderSize);
+        		if (ImGui::SliderInt("##third slider", &i3, 0, maxVal, "B: %d"))
+        		{
+        			if (i3 > maxVal) i3 = maxVal;
+        		}
+
+        		ImGuiUtils::CustomSpacing(3);
+        		ImGui::Button("Copy Preview Color", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y));
+        	}
+        	ImGui::EndChild();
         }
         ImGui::End();
 
 		if (isDemoWindowOpened)
 		{
 			ImGui::ShowDemoWindow(&isDemoWindowOpened);
+		}
+		if (isGuidWindowOpened)
+		{
+			RenderUtils::RenderGuideWindow(&isGuidWindowOpened);
+		}
+		if (isAboutWindowOpened)
+		{
+			RenderUtils::RenderAboutWindow(&isAboutWindowOpened);
+		}
+		if (isTextWindowOpened)
+		{
+			RenderUtils::RenderTextWindow(&isTextWindowOpened);
 		}
 	}
 
@@ -161,16 +241,44 @@ private:
 		if (keyPressed.GetKeyCode() == static_cast<int32_t>(Walnut::KeyCode::X))
 		{
 			Objects::CursorPoint cursorPoint;
-			mManagerLocator.resolve<Managers::CursorManager>()->FillCursorPoint(cursorPoint);
+			mCursorManager->FillCursorPoint(cursorPoint);
 
-			mManagerLocator.resolve<Managers::ColorsManager>()->AddPickedColor(cursorPoint.color);
+			mColorsManager->AddPickedColor(cursorPoint.color);
 		}
 
 		return handled;
 	}
+
+	void RenderMousePosition()
+	{
+		if (mImage == nullptr || mViewportWidth != mImage->GetWidth() || mViewportHeight != mImage->GetHeight())
+		{
+			mImage = std::make_shared<Walnut::Image>(mViewportWidth, mViewportHeight, Walnut::ImageFormat::RGBA);
+			delete[] mImageData;
+			mImageData = new uint32_t[mViewportWidth * mViewportHeight];
+		}
+
+		// Iteration throught all pixels
+		for (uint32_t i = 0; i < mViewportWidth * mViewportHeight; i++)
+		{
+			mImageData[i] = Walnut::Random::UInt();
+			//Sets the alpha channel to 1. it's an RGBA format form right to left
+			mImageData[i] |= 0xff000000;
+		}
+
+		mImage->SetData(mImageData);
+	}
 	
 private:
-	const ServiceLocator::ManagerLocator& mManagerLocator;
+	std::shared_ptr<Managers::StyleManager> mStyleManager;
+	std::shared_ptr<Managers::ColorsManager> mColorsManager;
+	std::shared_ptr<Managers::CursorManager> mCursorManager;
+	std::shared_ptr<Managers::AppBehaviourManager> mAppBehaviourManager;
+
+	std::shared_ptr<Walnut::Image> mImage;
+	uint32_t* mImageData = nullptr;
+	uint32_t mViewportWidth = 40;
+	uint32_t mViewportHeight = 40;
 };
 
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
@@ -178,13 +286,11 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	Walnut::ApplicationSpecification spec;
 	spec.Name = "Color Picker";
 	spec.Width = 450;
-	spec.Height = 480;
+	spec.Height = 450;
 	spec.CanResize = false;
-
-	//Create locator here and all managers and put as an arg to the layer.
-
-	// logic toggles for ui
+	
 	static bool isAutoColorsSaveEnabled = true;
+	static bool isStayOnTop = false;
 
 	using namespace Managers;
 	static ServiceLocator::ManagerLocator managerLocator;
@@ -192,6 +298,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	managerLocator.registerInstance<StyleManager>(new StyleManager);
 	managerLocator.registerInstance<CursorManager>(new CursorManager);
 	managerLocator.registerInstance<ColorsManager>(new ColorsManager);
+	managerLocator.registerInstance<AppBehaviourManager>(new AppBehaviourManager);
 	
 	Walnut::Application* app = new Walnut::Application(spec);
 	std::shared_ptr<ColorPickerLayer> mainLayer = std::make_shared<ColorPickerLayer>(managerLocator);
@@ -203,15 +310,25 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 #ifdef WL_DEBUG
 			ImGui::MenuItem("ShowDemoWindow", nullptr, &isDemoWindowOpened);
 #endif // WL_DEBUG
+			if (ImGui::MenuItem("Stay on Top", nullptr, &isStayOnTop))
+			{
+				WindowFlagEvent flagEvent("StayOnTop", isStayOnTop);
+				app->OnEvent(flagEvent);
+			}
 			if (ImGui::MenuItem("Exit"))
 			{
 				app->Close();
 			}
 			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("Tools"))
+		{
+			ImGui::MenuItem("Text", nullptr, &isTextWindowOpened);
+			
+			ImGui::EndMenu();
+		}
 		if (ImGui::BeginMenu("Color List"))
 		{
-			//TODO: mb different manager???
 			auto colorsManager = managerLocator.resolve<ColorsManager>();
 			if (ImGui::MenuItem("Clear All",nullptr, nullptr, colorsManager->CanClearColors()))
 			{
@@ -220,7 +337,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			if (ImGui::MenuItem("Auto Save", nullptr, &isAutoColorsSaveEnabled))
 			{
 				bool enabled = isAutoColorsSaveEnabled;
-				// todo: use manager
+				// todo: use manager different manage?
 			}
 				
 			ImGui::EndMenu();

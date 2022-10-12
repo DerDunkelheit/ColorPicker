@@ -11,4 +11,6 @@ namespace ImGuiUtils
 
     void SelectableColor(ImU32 color);
     void SelectedColor(ImU32 color);
+
+    void HelpMarker(const char* desc);
 }
