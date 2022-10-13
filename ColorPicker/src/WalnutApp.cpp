@@ -16,8 +16,10 @@
 #include "Managers/CursorManager.h"
 #include "Walnut/KeyEvents.h"
 #include "Managers/AppBehaviourManager.h"
+#include "Managers/CursorPosRenderManager.h"
 #include "Walnut/GLFWWindowEvents.h"
 #include "Walnut/Random.h"
+#include "Walnut/Timer.h"
 
 //TODO: to separate file.
 #define BIND_EVENT_FN(x) std::bind(&x, this, std::placeholders::_1)
@@ -38,6 +40,10 @@ public:
 		mCursorManager = managerLocator.resolve<Managers::CursorManager>();
 		mColorsManager = managerLocator.resolve<Managers::ColorsManager>();
 		mAppBehaviourManager = managerLocator.resolve<Managers::AppBehaviourManager>();
+
+		//Cuz we use static layerLocator we cannot use resolve here, cuz all frames are destroyed when we release image data.
+		//TODO: come up with smt.
+		mCursorPosRenderManager = std::make_shared<Managers::CursorPosRenderManager>(mCursorManager);
 	}
 	
 	virtual void OnAttach() override
@@ -66,14 +72,18 @@ public:
 
             ImGui::SameLine();
         	const auto& zoomRegionUIInfo = mStyleManager->GetZoomRegionUIInfo();
+        	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f)); // remove padding from render viewport
             ImGui::BeginChild("##ZoomField", ImVec2(zoomRegionUIInfo.mXSize, zoomRegionUIInfo.mYSize), true);
             {
-        		RenderMousePosition();
+        		//TODO: nice to have: we can create a separate window with rendering of cursor pos with custom zooming and ability to freeze position.
+        		mCursorPosRenderManager->RenderMousePosition(cursorPoint);
 
-        		if (mImage)
-        			ImGui::Image(mImage->GetDescriptorSet(), { static_cast<float>(mImage->GetWidth()), static_cast<float>(mImage->GetHeight()) });
+        		auto mousePosImage = mCursorPosRenderManager->GetImage();
+        		if (mousePosImage != nullptr)
+        			ImGui::Image(mousePosImage->GetDescriptorSet(), { static_cast<float>(mousePosImage->GetWidth()), static_cast<float>(mousePosImage->GetHeight()) });
             }
-            ImGui::EndChild();
+        	ImGui::PopStyleVar();
+        	ImGui::EndChild();
             
             //-----------------------------------------------------------
             ImGui::SameLine();
@@ -131,6 +141,8 @@ public:
 			ImGui::SetCursorPosY(ImGui::GetContentRegionAvail().y / 2 - 80);
         	ImGui::Text(colorBuf);
         	ImGui::Text(buf);
+        	ImGuiIO& io = ImGui::GetIO();
+        	ImGui::Text("%.1f FPS", io.Framerate);
         	ImGui::SetCursorPosY(ImGui::GetContentRegionAvail().y / 2 );
             //-----------------------------------------------------------
 
@@ -178,6 +190,7 @@ public:
         		if (ImGui::SliderInt("##first slider", &i1, 0, maxVal, "R: %d"))
         		{
         			if (i1 > maxVal) i1 = maxVal;
+        			if (i1 < 0) i1 = 0;
         		}
         		ImGui::SameLine(); ImGuiUtils::HelpMarker("CTRL+click to input value.");
         		ImGui::SetCursorPosX(ImGui::GetWindowSize().x / 2 - sliderSize / 2);
@@ -185,12 +198,14 @@ public:
         		if (ImGui::SliderInt("##second slider", &i2, 0, maxVal, "G: %d"))
         		{
         			if (i2 > maxVal) i2 = maxVal;
+        			if (i2 < 0) i2 = 0;
         		}
         		ImGui::SetCursorPosX(ImGui::GetWindowSize().x / 2 - sliderSize / 2);
         		ImGui::PushItemWidth(sliderSize);
         		if (ImGui::SliderInt("##third slider", &i3, 0, maxVal, "B: %d"))
         		{
         			if (i3 > maxVal) i3 = maxVal;
+        			if (i3 < 0) i3 = 0;
         		}
 
         		ImGuiUtils::CustomSpacing(3);
@@ -248,37 +263,13 @@ private:
 
 		return handled;
 	}
-
-	void RenderMousePosition()
-	{
-		if (mImage == nullptr || mViewportWidth != mImage->GetWidth() || mViewportHeight != mImage->GetHeight())
-		{
-			mImage = std::make_shared<Walnut::Image>(mViewportWidth, mViewportHeight, Walnut::ImageFormat::RGBA);
-			delete[] mImageData;
-			mImageData = new uint32_t[mViewportWidth * mViewportHeight];
-		}
-
-		// Iteration throught all pixels
-		for (uint32_t i = 0; i < mViewportWidth * mViewportHeight; i++)
-		{
-			mImageData[i] = Walnut::Random::UInt();
-			//Sets the alpha channel to 1. it's an RGBA format form right to left
-			mImageData[i] |= 0xff000000;
-		}
-
-		mImage->SetData(mImageData);
-	}
 	
 private:
 	std::shared_ptr<Managers::StyleManager> mStyleManager;
 	std::shared_ptr<Managers::ColorsManager> mColorsManager;
 	std::shared_ptr<Managers::CursorManager> mCursorManager;
 	std::shared_ptr<Managers::AppBehaviourManager> mAppBehaviourManager;
-
-	std::shared_ptr<Walnut::Image> mImage;
-	uint32_t* mImageData = nullptr;
-	uint32_t mViewportWidth = 40;
-	uint32_t mViewportHeight = 40;
+	std::shared_ptr<Managers::CursorPosRenderManager> mCursorPosRenderManager;
 };
 
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
@@ -294,11 +285,13 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 
 	using namespace Managers;
 	static ServiceLocator::ManagerLocator managerLocator;
-	
+
+	//todo: maybe store it inside app manager???
 	managerLocator.registerInstance<StyleManager>(new StyleManager);
 	managerLocator.registerInstance<CursorManager>(new CursorManager);
 	managerLocator.registerInstance<ColorsManager>(new ColorsManager);
 	managerLocator.registerInstance<AppBehaviourManager>(new AppBehaviourManager);
+	managerLocator.registerInstance<CursorPosRenderManager>(new CursorPosRenderManager);
 	
 	Walnut::Application* app = new Walnut::Application(spec);
 	std::shared_ptr<ColorPickerLayer> mainLayer = std::make_shared<ColorPickerLayer>(managerLocator);
