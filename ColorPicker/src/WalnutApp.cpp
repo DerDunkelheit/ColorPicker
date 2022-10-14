@@ -1,6 +1,7 @@
 #include <windows.h>
 
 #include <imgui_internal.h>
+#include <Walnut/CoreMacro.h>
 #include <Walnut/Application.h>
 #include <Walnut/EntryPoint.h>
 #include <Walnut/Image.h>
@@ -21,15 +22,10 @@
 #include "Walnut/Random.h"
 #include "Walnut/Timer.h"
 
-//TODO: to separate file.
-#define BIND_EVENT_FN(x) std::bind(&x, this, std::placeholders::_1)
-
 static bool isDemoWindowOpened = false;
 static bool isGuidWindowOpened = false;
 static bool isAboutWindowOpened = false;
 static bool isTextWindowOpened = false;
-
-static bool isImageRenderingEnable = false;
 
 class ColorPickerLayer : public Walnut::Layer
 {

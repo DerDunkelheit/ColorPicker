@@ -21,6 +21,7 @@
 #include "GLFWWindowEvents.h"
 #include "imgui_internal.h"
 #include "KeyEvents.h"
+#include "CoreMacro.h"
 #include "ImGui/Roboto-Regular.embed"
 
 extern bool g_ApplicationRunning;
@@ -60,8 +61,6 @@ static std::vector<std::vector<std::function<void()>>> s_ResourceFreeQueue;
 static uint32_t s_CurrentFrameIndex = 0;
 
 static Walnut::Application* s_Instance = nullptr;
-
-#define BIND_EVENT_FN(x) std::bind(&x, this, std::placeholders::_1)
 
 void check_vk_result(VkResult err)
 {

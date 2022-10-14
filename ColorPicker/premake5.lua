@@ -9,6 +9,8 @@ project "WalnutApp"
 
    includedirs
    {
+      "src",
+
       "../vendor/imgui",
       "../vendor/glfw/include",
 
@@ -16,6 +18,7 @@ project "WalnutApp"
 
       "%{IncludeDir.VulkanSDK}",
       "%{IncludeDir.glm}",
+      "%{IncludeDir.mIni}",
    }
 
     links

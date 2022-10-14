@@ -1,6 +1,6 @@
 ﻿#include "ColorsManager.h"
 
-#include "../Objects/Objects.h"
+#include "Objects/Objects.h"
 
 namespace Managers
 {

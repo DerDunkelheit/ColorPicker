@@ -2,7 +2,7 @@
 
 #include <imgui.h>
 
-#include "../Objects/Objects.h" //TODO: fix include
+#include "Objects/Objects.h"
 
 namespace Managers
 {
