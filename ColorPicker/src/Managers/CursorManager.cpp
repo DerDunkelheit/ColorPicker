@@ -9,7 +9,7 @@ namespace Managers
         hDC = GetDC(nullptr);
         if (hDC == nullptr)
         {
-            static_assert(true);
+            __debugbreak();
         }
     }
 
@@ -25,7 +25,7 @@ namespace Managers
             if (color == CLR_INVALID)
             {
                 // handle error
-                static_assert(true);
+                __debugbreak();
             }
             else
             {
@@ -37,7 +37,7 @@ namespace Managers
         }
         else
         {
-            static_assert(true);
+            __debugbreak();
         }
     }
 }

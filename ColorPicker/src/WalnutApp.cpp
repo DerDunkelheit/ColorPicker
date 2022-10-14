@@ -6,21 +6,20 @@
 #include <Walnut/EntryPoint.h>
 #include <Walnut/Image.h>
 #include <Walnut/Input/Input.h>
+#include <Walnut/KeyEvents.h>
+#include <Walnut/GLFWWindowEvents.h>
+#include <Walnut/Random.h>
 
 #include "ImGuiUtils.h"
-#include "RenderUtils.h"
 #include "Events/ActionEvent.h"
+#include "RenderUtils.h"
 #include "ServiceLocator.h"
-#include "Managers/ColorsManager.h"
 #include "Objects/Objects.h"
+#include "Managers/ColorsManager.h"
 #include "Managers/StyleManager.h"
 #include "Managers/CursorManager.h"
-#include "Walnut/KeyEvents.h"
 #include "Managers/AppBehaviourManager.h"
 #include "Managers/CursorPosRenderManager.h"
-#include "Walnut/GLFWWindowEvents.h"
-#include "Walnut/Random.h"
-#include "Walnut/Timer.h"
 
 static bool isDemoWindowOpened = false;
 static bool isGuidWindowOpened = false;
@@ -32,20 +31,23 @@ class ColorPickerLayer : public Walnut::Layer
 public:
 	ColorPickerLayer(const ServiceLocator::ManagerLocator& managerLocator)
 	{
-		mStyleManager = managerLocator.resolve<Managers::StyleManager>();
-		mCursorManager = managerLocator.resolve<Managers::CursorManager>();
-		mColorsManager = managerLocator.resolve<Managers::ColorsManager>();
-		mAppBehaviourManager = managerLocator.resolve<Managers::AppBehaviourManager>();
-
-		//Cuz we use static layerLocator we cannot use resolve here, cuz all frames are destroyed when we release image data.
-		//TODO: come up with smt.
-		mCursorPosRenderManager = std::make_shared<Managers::CursorPosRenderManager>(mCursorManager);
+		using namespace Managers;
+		mStyleManager = managerLocator.resolve<StyleManager>();
+		mCursorManager = managerLocator.resolve<CursorManager>();
+		mColorsManager = managerLocator.resolve<ColorsManager>();
+		mAppBehaviourManager = managerLocator.resolve<AppBehaviourManager>();
+		mCursorPosRenderManager = managerLocator.resolve<CursorPosRenderManager>();
 	}
 	
 	virtual void OnAttach() override
 	{
-		using namespace Managers;
 		mStyleManager->SetAppLookPreferences();
+	}
+
+	virtual void OnDetach() override
+	{
+		// some resources should be cleaned manually
+		mCursorPosRenderManager->CleanUpResources();
 	}
 	
 	virtual void OnUIRender() override
@@ -73,10 +75,15 @@ public:
             {
         		//TODO: nice to have: we can create a separate window with rendering of cursor pos with custom zooming and ability to freeze position.
         		mCursorPosRenderManager->RenderMousePosition(cursorPoint);
-
-        		auto mousePosImage = mCursorPosRenderManager->GetImage();
-        		if (mousePosImage != nullptr)
-        			ImGui::Image(mousePosImage->GetDescriptorSet(), { static_cast<float>(mousePosImage->GetWidth()), static_cast<float>(mousePosImage->GetHeight()) });
+        		
+        		if (mCursorPosRenderManager->HasImage())
+        		{
+        			const Walnut::Image& renderImage = mCursorPosRenderManager->GetImage();
+	                ImGui::Image(renderImage.GetDescriptorSet(), {
+		                             static_cast<float>(renderImage.GetWidth()),
+		                             static_cast<float>(renderImage.GetHeight())
+	                             });
+        		}
             }
         	ImGui::PopStyleVar();
         	ImGui::EndChild();
@@ -280,24 +287,26 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	static bool isStayOnTop = false;
 
 	using namespace Managers;
-	static ServiceLocator::ManagerLocator managerLocator;
-
-	//todo: maybe store it inside app manager???
+	ServiceLocator::ManagerLocator managerLocator;
 	managerLocator.registerInstance<StyleManager>(new StyleManager);
 	managerLocator.registerInstance<CursorManager>(new CursorManager);
 	managerLocator.registerInstance<ColorsManager>(new ColorsManager);
 	managerLocator.registerInstance<AppBehaviourManager>(new AppBehaviourManager);
-	managerLocator.registerInstance<CursorPosRenderManager>(new CursorPosRenderManager);
+	managerLocator.registerInstance<CursorPosRenderManager>(new CursorPosRenderManager(managerLocator.resolve<CursorManager>()));
 	
 	Walnut::Application* app = new Walnut::Application(spec);
 	std::shared_ptr<ColorPickerLayer> mainLayer = std::make_shared<ColorPickerLayer>(managerLocator);
 	app->PushLayer(mainLayer);
-	app->SetMenubarCallback([app]()
+	app->SetMenubarCallback([app, managerLocator]()
 	{
 		if (ImGui::BeginMenu("Options"))
 		{
 #ifdef WL_DEBUG
 			ImGui::MenuItem("ShowDemoWindow", nullptr, &isDemoWindowOpened);
+			if (ImGui::MenuItem("Test"))
+			{
+				managerLocator.resolve<ColorsManager>()->SetSelectedColor(2);
+			}
 #endif // WL_DEBUG
 			if (ImGui::MenuItem("Stay on Top", nullptr, &isStayOnTop))
 			{
@@ -321,7 +330,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			auto colorsManager = managerLocator.resolve<ColorsManager>();
 			if (ImGui::MenuItem("Clear All",nullptr, nullptr, colorsManager->CanClearColors()))
 			{
-				managerLocator.resolve<ColorsManager>()->ClearPickedColors();
+				colorsManager->ClearPickedColors();
 			}
 			if (ImGui::MenuItem("Auto Save", nullptr, &isAutoColorsSaveEnabled))
 			{

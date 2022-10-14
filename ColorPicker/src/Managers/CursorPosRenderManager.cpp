@@ -19,7 +19,12 @@ namespace Managers
 
     CursorPosRenderManager::~CursorPosRenderManager()
     {
-        
+        CleanUpResources();
+    }
+
+    void CursorPosRenderManager::CleanUpResources()
+    {
+        mImage.reset();
     }
 
     uint32_t PerPixel(glm::vec2 coord)

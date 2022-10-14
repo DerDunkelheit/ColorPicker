@@ -26,7 +26,11 @@ namespace Managers
         CursorPosRenderManager();
         ~CursorPosRenderManager();
 
-        std::shared_ptr<Walnut::Image> GetImage() const { return mImage; }
+        void CleanUpResources();
+
+        const Walnut::Image& GetImage() const { return *mImage; }
+
+        bool HasImage() const { return mImage != nullptr; }
         
         void RenderMousePosition(const Objects::CursorPoint& cursorPoint);
         
