@@ -18,6 +18,13 @@ namespace Managers
         return !mPickedColors.empty();
     }
 
+    void ColorsManager::RemoveColor(int index)
+    {
+        assert(mPickedColors.size() > index);
+
+        mPickedColors.erase(mPickedColors.begin() + index);
+    }
+
     void ColorsManager::ClearPickedColors()
     {
         mPickedColors.clear();
@@ -39,9 +46,18 @@ namespace Managers
 
     void ColorsManager::SetSelectedColor(int index)
     {
-        assert(index >= 0);
+        assert(index >= -1);
         
         mSelectedColorIndex = index;
+    }
+
+    void ColorsManager::CommentSelectedColor(const char* comment)
+    {
+        assert(mSelectedColorIndex > -1);
+
+        mPickedColors[mSelectedColorIndex].comment = comment;
+
+        SaveLoadUtils::SaveColorsVector(mPickedColors);
     }
 
     void ColorsManager::SaveAutoSaveColorsList()

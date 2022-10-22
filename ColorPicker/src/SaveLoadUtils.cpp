@@ -7,6 +7,7 @@
 #include "Objects/Objects.h"
 
 static const char* PICKED_COLORS_FILE_NAME = "PickedColors.txt";
+static char DELIMITER = ',';
 
 namespace SaveLoadUtils
 {
@@ -22,7 +23,19 @@ namespace SaveLoadUtils
             std::string line;
             while (std::getline (pickedColorsFile, line))
             {
-                returnData.push_back(ColorsUtils::GetColorFromHex(line.c_str()));
+                const size_t pos = line.find(DELIMITER);
+                if (pos != std::string::npos)
+                {
+                    Objects::Color color = (ColorsUtils::GetColorFromHex(line.substr(0, pos).c_str()));
+                    const std::string comment = line.substr(pos + 1, line.length() - pos + 1);
+                    color.comment = comment;
+
+                    returnData.push_back(color);
+                }
+                else
+                {
+                    returnData.push_back(ColorsUtils::GetColorFromHex(line.c_str()));
+                }
             }
             
             pickedColorsFile.close();
@@ -41,7 +54,14 @@ namespace SaveLoadUtils
             
             for (auto& color : colors)
             {
-                pickedColorsFile << ColorsUtils::CreateHexColorFromRGB(color) << "\n";
+                if (color.HasComment())
+                {
+                    pickedColorsFile << ColorsUtils::CreateHexColorFromRGB(color) << "," << color.comment << "\n";
+                }
+                else
+                {
+                    pickedColorsFile << ColorsUtils::CreateHexColorFromRGB(color) << "\n";
+                }
             }
 
             pickedColorsFile.close();

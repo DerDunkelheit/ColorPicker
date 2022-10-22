@@ -21,9 +21,12 @@ namespace Managers
         
         bool* GetAutoSaveColorsListMemory() { return &mAutoSaveColorsList; }
 
+        void RemoveColor(int index);
         void ClearPickedColors();
         void AddPickedColor(Objects::Color color);
         void SetSelectedColor(int index);
+        void CommentSelectedColor(const char* comment);
+        
         void SaveAutoSaveColorsList();
 
     private:
@@ -31,7 +34,7 @@ namespace Managers
         
     private:
         std::vector<Objects::Color> mPickedColors;
-        int mSelectedColorIndex = 0;
+        int mSelectedColorIndex = -1;
 
         bool mAutoSaveColorsList = false;
     };

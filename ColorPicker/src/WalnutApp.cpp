@@ -22,10 +22,14 @@
 #include "Managers/CursorPosRenderManager.h"
 #include "Walnut/Timer.h"
 
+// Windows
 static bool isDemoWindowOpened = false;
 static bool isGuidWindowOpened = false;
 static bool isAboutWindowOpened = false;
 static bool isTextWindowOpened = false;
+
+// Popups
+static bool isColorCommentPopup = false;
 
 class ColorPickerLayer : public Walnut::Layer
 {
@@ -102,7 +106,7 @@ public:
                     const Objects::Color& currentColor = pickedColors[i];
 
                 	//todo: string in render loop.
-                    std::string label = std::to_string(i);
+                    std::string label = "##" + std::to_string(i);
                     
                     if (ImGui::Selectable(label.data()))
                     {
@@ -112,12 +116,37 @@ public:
                 	if (ImGui::BeginPopupContextItem())
                 	{
                 		mColorsManager->SetSelectedColor(i);
-                		
-                		//TODO: implement popup logic
+
                 		ImGui::Text("This a popup for %d, %d, %d", currentColor.r, currentColor.g, currentColor.b);
-                		if (ImGui::Button("Copy to clipboard")) ImGui::CloseCurrentPopup();
-                		if (ImGui::Button("Add comment")) ImGui::CloseCurrentPopup();
-                		if (ImGui::Button("Delete color")) ImGui::CloseCurrentPopup();
+                		if (ImGui::Button("Copy to clipboard"))
+                		{
+                			ImGui::LogToClipboard();
+
+                			char copiedBuf[64];
+                			currentColor.HasComment() ?
+                				sprintf_s(copiedBuf, "%d, %d, %d, %s", currentColor.r, currentColor.g, currentColor.b, currentColor.comment.c_str())
+                			    : sprintf_s(copiedBuf, "%d, %d, %d", currentColor.r, currentColor.g, currentColor.b);
+                			
+                			ImGui::LogText(copiedBuf);
+                			ImGui::LogFinish();
+                			
+                			ImGui::CloseCurrentPopup();	
+                		}
+                		if (ImGui::Button("Add comment"))
+                		{
+                			isColorCommentPopup = true;
+                			
+                			ImGui::CloseCurrentPopup();
+                		}
+                		if (ImGui::Button("Delete color"))
+                		{
+                			ImGui::CloseCurrentPopup();
+
+                			mColorsManager->SetSelectedColor(-1);
+                			mColorsManager->RemoveColor(i);
+                			ImGui::EndPopup();
+                			break;
+                		}
 
                 		ImGui::EndPopup();
 					}
@@ -129,12 +158,15 @@ public:
                     }
                     else
                     {
-                        ImGuiUtils::SelectableColor(IM_COL32(currentColor.r, currentColor.g, currentColor.b, 255));
+                       ImGuiUtils::SelectableColor(IM_COL32(currentColor.r, currentColor.g, currentColor.b, 255));
                     }
 
                     ImGui::SameLine();
                     char colorBuf[64];
-                    sprintf_s(colorBuf, "%d, %d, %d", currentColor.r, currentColor.g, currentColor.b);
+                	currentColor.HasComment() ?
+                		sprintf_s(colorBuf, "%d, %d, %d %s", currentColor.r, currentColor.g, currentColor.b, currentColor.comment.c_str())
+                	    : sprintf_s(colorBuf, "%d, %d, %d", currentColor.r, currentColor.g, currentColor.b);
+                	
                 	ImGui::TextColored(mStyleManager->GetColorThemeBasedOnColor(currentColor), colorBuf);
                 }
             }
@@ -222,6 +254,45 @@ public:
         }
         ImGui::End();
 
+		// Popups ---------------------------------------------------------
+		if (isColorCommentPopup) ImGui::OpenPopup("Comment selected color");
+		
+        const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+		if (ImGui::BeginPopupModal("Comment selected color", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			auto AddComment = [this](const char* commentBuf)
+			{
+				isColorCommentPopup = false;
+				mColorsManager->CommentSelectedColor(commentBuf);
+				
+				ImGui::CloseCurrentPopup();
+			};
+			
+			static char commentBuf[128] = "";
+			if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0)) ImGui::SetKeyboardFocusHere(0);
+			if (ImGui::InputTextWithHint("##commentColorInputText", "Your comment...", commentBuf, IM_ARRAYSIZE(commentBuf), ImGuiInputTextFlags_EnterReturnsTrue))
+			{
+				AddComment(commentBuf);
+				memset(commentBuf, 0, IM_ARRAYSIZE(commentBuf));
+			}
+			ImGui::Separator();
+
+			if (ImGui::Button("Add", ImVec2(120, 0)))
+			{
+				AddComment(commentBuf);
+				memset(commentBuf, 0, IM_ARRAYSIZE(commentBuf));
+			}
+			ImGui::SetItemDefaultFocus();
+			ImGui::SameLine();
+
+			if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); isColorCommentPopup = false; }
+			ImGui::EndPopup();
+		}
+		//-----------------------------------------------------------------
+
+		// Another windows-------------------------------------------------
 		if (isDemoWindowOpened)
 		{
 			ImGui::ShowDemoWindow(&isDemoWindowOpened);
@@ -238,6 +309,7 @@ public:
 		{
 			RenderUtils::RenderTextWindow(&isTextWindowOpened);
 		}
+		//-----------------------------------------------------------------
 	}
 
 	virtual void OnEvent(Event& event) override
