@@ -36,6 +36,13 @@ namespace Managers
 
         style.Colors[ImGuiCol_Border] = ImColor(0, 0, 0, 255);
 
+        style.Colors[ImGuiCol_FrameBg] = ImColor(30, 30, 30);
+        style.Colors[ImGuiCol_FrameBgHovered] = ImColor(35, 35, 35);
+        style.Colors[ImGuiCol_FrameBgActive] = ImColor(35, 35, 35);
+
+        style.Colors[ImGuiCol_SliderGrab] = ImColor(115, 115, 115);
+        style.Colors[ImGuiCol_SliderGrabActive] = ImColor(128, 128, 128);
+
         style.ScrollbarSize = 10;
     }
 
