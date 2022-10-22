@@ -1,12 +1,16 @@
 ﻿#include "ColorsManager.h"
 
+#include <assert.h>
+#include <filesystem>
+
 #include "Objects/Objects.h"
+#include "SaveLoadUtils.h"
 
 namespace Managers
 {
     ColorsManager::ColorsManager()
     {
-       
+       Load();
     }
 
     bool ColorsManager::CanClearColors() const
@@ -24,11 +28,29 @@ namespace Managers
     void ColorsManager::AddPickedColor(Objects::Color color)
     {
         mPickedColors.push_back(color);
+
+        if (mAutoSaveColorsList)
+        {
+            SaveLoadUtils::SaveColorsVector(mPickedColors);
+        }
     }
 
     void ColorsManager::SetSelectedColor(int index)
     {
-        //TODO: input validation ??
+        assert(index >= 0);
+        
         mSelectedColorIndex = index;
+    }
+
+    void ColorsManager::SaveAutoSaveColorsList()
+    {
+       SaveLoadUtils::WriteValue<bool>("managers", "AutoSave", mAutoSaveColorsList);
+    }
+
+    void ColorsManager::Load()
+    {
+        mAutoSaveColorsList = SaveLoadUtils::ReadValue<bool>("managers", "AutoSave");
+
+        mPickedColors = SaveLoadUtils::ReadColorsVector();
     }
 }

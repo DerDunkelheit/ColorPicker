@@ -35,11 +35,13 @@ namespace Managers
         style.Colors[ImGuiCol_ButtonHovered] = ImColor(40,40,40);
 
         style.Colors[ImGuiCol_Border] = ImColor(0, 0, 0, 255);
+
+        style.ScrollbarSize = 10;
     }
 
     ImVec4 StyleManager::GetColorThemeBasedOnColor(const Objects::Color& color)
     {
-        if (color.r > 150 && color.g > 150 && color.b > 150)
+        if (color.r > 200 || color.g > 200 || color.b > 200)
         {
             return {0,0,0, 255};
         }

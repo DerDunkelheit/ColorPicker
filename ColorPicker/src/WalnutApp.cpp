@@ -20,6 +20,7 @@
 #include "Managers/CursorManager.h"
 #include "Managers/AppBehaviourManager.h"
 #include "Managers/CursorPosRenderManager.h"
+#include "Walnut/Timer.h"
 
 static bool isDemoWindowOpened = false;
 static bool isGuidWindowOpened = false;
@@ -212,7 +213,10 @@ public:
         		}
 
         		ImGuiUtils::CustomSpacing(3);
-        		ImGui::Button("Copy Preview Color", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y));
+        		if (ImGui::Button("Copy Preview Color", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y)))
+        		{
+        			
+        		}
         	}
         	ImGui::EndChild();
         }
@@ -283,7 +287,6 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	spec.Height = 450;
 	spec.CanResize = false;
 	
-	static bool isAutoColorsSaveEnabled = true;
 	static bool isStayOnTop = false;
 
 	using namespace Managers;
@@ -321,7 +324,8 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		}
 		if (ImGui::BeginMenu("Tools"))
 		{
-			ImGui::MenuItem("Text", nullptr, &isTextWindowOpened);
+			auto colorsManager = managerLocator.resolve<ColorsManager>();
+			ImGui::MenuItem("Text", nullptr, &isTextWindowOpened, colorsManager->CanOpenTextWindow());
 			
 			ImGui::EndMenu();
 		}
@@ -332,12 +336,11 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			{
 				colorsManager->ClearPickedColors();
 			}
-			if (ImGui::MenuItem("Auto Save", nullptr, &isAutoColorsSaveEnabled))
+			if (ImGui::MenuItem("Auto Save", nullptr, colorsManager->GetAutoSaveColorsListMemory()))
 			{
-				bool enabled = isAutoColorsSaveEnabled;
-				// todo: use manager different manage?
+				colorsManager->SaveAutoSaveColorsList();
 			}
-				
+			int a = 5;
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Help"))

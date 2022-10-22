@@ -26,7 +26,30 @@ namespace RenderUtils
     {
         ImGui::Begin("Text", p_open, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse);
         {
-            
+            ImGuiIO& io = ImGui::GetIO();
+
+            const char* items[] = { "25", "50" };
+            static int item_current = 0;
+            ImGui::Text("Font size: ");
+            ImGui::SameLine();
+            ImGui::Combo("##FontSize", &item_current, items, IM_ARRAYSIZE(items));
+
+            ImGui::BeginChild("##TextPreview", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
+            {
+                switch (item_current)
+                {
+                case 0:
+                    ImGui::PushFont(io.Fonts->Fonts[1]);
+                    break;
+                
+                case 1:
+                    ImGui::PushFont(io.Fonts->Fonts[2]);
+                    break;
+                }
+                ImGui::Text("Hello with another font");
+                ImGui::PopFont();
+            }
+            ImGui::EndChild();
         }
         ImGui::End();
     }

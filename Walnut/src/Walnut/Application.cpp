@@ -535,6 +535,10 @@ namespace Walnut {
 		ImFont* robotoFont = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoRegular, sizeof(g_RobotoRegular), 16.0f, &fontConfig);
 		io.FontDefault = robotoFont;
 
+		// TODO: temporal test for text imGui window
+		ImFont* robotoFont2 = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoRegular, sizeof(g_RobotoRegular), 25, &fontConfig);
+		ImFont* robotoFont3 = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoRegular, sizeof(g_RobotoRegular), 50, &fontConfig);
+
 		// Upload Fonts
 		{
 			// Use any command queue
