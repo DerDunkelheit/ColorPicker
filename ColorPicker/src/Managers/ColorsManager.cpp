@@ -23,6 +23,8 @@ namespace Managers
         mPickedColors.clear();
 
         SetSelectedColor(0);
+
+        SaveLoadUtils::ClearColorsVector();
     }
 
     void ColorsManager::AddPickedColor(Objects::Color color)

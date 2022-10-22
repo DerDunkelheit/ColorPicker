@@ -47,4 +47,17 @@ namespace SaveLoadUtils
             pickedColorsFile.close();
         }
     }
+
+    void ClearColorsVector()
+    {
+        assert(std::filesystem::exists(PICKED_COLORS_FILE_NAME));
+
+        if (std::filesystem::exists(PICKED_COLORS_FILE_NAME))
+        {
+            std::ofstream pickedColorsFile(PICKED_COLORS_FILE_NAME);
+            pickedColorsFile.clear();
+            
+            pickedColorsFile.close();
+        }
+    }
 }

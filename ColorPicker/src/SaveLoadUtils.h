@@ -76,4 +76,5 @@ namespace SaveLoadUtils
 
     std::vector<Objects::Color> ReadColorsVector();
     void SaveColorsVector(const std::vector<Objects::Color>& colors);
+    void ClearColorsVector();
 }
