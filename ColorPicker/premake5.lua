@@ -39,14 +39,14 @@ project "WalnutApp"
       symbols "On"
 
    filter "configurations:Release"
-      defines { "WL_RELEASE" }
+      defines { "WL_RELEASE", "NDEBUG" }
       runtime "Release"
       optimize "On"
       symbols "On"
 
    filter "configurations:Dist"
       kind "WindowedApp"
-      defines { "WL_DIST" }
+      defines { "WL_DIST", "NDEBUG" }
       runtime "Release"
       optimize "On"
       symbols "Off"
