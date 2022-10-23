@@ -95,7 +95,7 @@ public:
             
             //-----------------------------------------------------------
             ImGui::SameLine();
-            ImGui::PushStyleColor(ImGuiCol_Border, ImColor(80, 0, 0, 255).Value);
+            ImGui::PushStyleColor(ImGuiCol_Border, ImColor(110, 110, 128, 255).Value);
         	const auto& pickedColorsUIInfo = mStyleManager->GetPickedColorsUIInfo();
             ImGui::BeginChild("##ColorList", ImVec2(pickedColorsUIInfo.mXSize, pickedColorsUIInfo.mYSize), true);
             {
@@ -193,7 +193,11 @@ public:
             ImGui::Text("Hotkey: X");
 
             ImGui::SameLine();
+        	ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1);
+        	ImGui::PushStyleColor(ImGuiCol_Border, ImColor(110, 110, 128, 255).Value);
             if ( ImGui::Button("Copy value", ImVec2(ImGui::GetContentRegionAvail().x, 25))) { }
+        	ImGui::PopStyleVar();
+        	ImGui::PopStyleColor();
             ImGuiUtils::CustomSpacing(5);
             ImGui::Separator();
 			//-------------------------------------------------------------------
@@ -204,14 +208,14 @@ public:
 				   0,ImVec2(96, 54));
 
         		ImGui::SameLine();
-        		ImGui::BeginChild("##test", ImVec2(ImGui::GetContentRegionAvail().x, 54), true);
+        		ImGui::BeginChild("##PreviewFormatChild", ImVec2(ImGui::GetContentRegionAvail().x, 54), true);
         		{
-        			ImGuiUtils::CustomSpacing(3);
-        			
         			static int e = 0;
-        			ImGui::RadioButton("RGB", &e, 0); ImGui::SameLine(0,25);
-        			ImGui::RadioButton("HSV", &e, 1); ImGui::SameLine(0,25);
-        			ImGui::RadioButton("HSL", &e, 2);
+                    ImGui::SameLine(0, 30);
+        			ImGui::SetCursorPosY(15);
+                    ImGui::RadioButton("RGB", &e, 0); ImGui::SameLine(0, 30);
+                    ImGui::RadioButton("HSV", &e, 1); ImGui::SameLine(0, 30);
+                    ImGui::RadioButton("HSL", &e, 2);
         		}
         		ImGui::EndChild();
 
@@ -245,10 +249,14 @@ public:
         		}
 
         		ImGuiUtils::CustomSpacing(3);
+        		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1);
+        		ImGui::PushStyleColor(ImGuiCol_Border, ImColor(110, 110, 128, 255).Value);
         		if (ImGui::Button("Copy Preview Color", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y)))
         		{
         			
         		}
+        		ImGui::PopStyleVar();
+        		ImGui::PopStyleColor();
         	}
         	ImGui::EndChild();
         }
