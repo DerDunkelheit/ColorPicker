@@ -11,6 +11,8 @@ namespace Objects
         Color(int _r, int _g, int _b)
             : r(_r), g(_g), b(_b) {}
 
+        static Color WhiteColor() { return Color{255, 255, 255}; }
+
         bool HasComment() const { return !comment.empty(); }
         
         int r = -1;

@@ -20,7 +20,7 @@
 #include "Managers/CursorManager.h"
 #include "Managers/AppBehaviourManager.h"
 #include "Managers/CursorPosRenderManager.h"
-#include "Walnut/Timer.h"
+#include "Managers/PreviewColorManager.h"
 
 // Windows
 static bool isDemoWindowOpened = false;
@@ -42,6 +42,7 @@ public:
 		mColorsManager = managerLocator.resolve<ColorsManager>();
 		mAppBehaviourManager = managerLocator.resolve<AppBehaviourManager>();
 		mCursorPosRenderManager = managerLocator.resolve<CursorPosRenderManager>();
+		mPreviewColorManager = managerLocator.resolve<PreviewColorManager>();
 	}
 	
 	virtual void OnAttach() override
@@ -111,6 +112,7 @@ public:
                     if (ImGui::Selectable(label.data()))
                     {
                         mColorsManager->SetSelectedColor(i);
+                    	mPreviewColorManager->SetPreviewColor(pickedColors[i]);
                     }
 
                 	if (ImGui::BeginPopupContextItem())
@@ -210,7 +212,8 @@ public:
 
         	ImGui::BeginChild("##PreviewColorRegion", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
         	{
-        		ImGui::ColorButton("PreviewColor", ImVec4(255 /255, 255/255, 255/ 255, 255),
+        		Objects::Color previewColor = mPreviewColorManager->GetPreviewColor();
+        		ImGui::ColorButton("PreviewColor", ImVec4((float)previewColor.r /255, (float)previewColor.g/255, (float)previewColor.b/ 255, 255),
 				   0,ImVec2(96, 54));
 
         		ImGui::SameLine();
@@ -225,9 +228,9 @@ public:
         		}
         		ImGui::EndChild();
 
-        		static int i1 = 0;
-        		static int i2 = 0;
-        		static int i3 = 0;
+        		int i1 = previewColor.r;
+        		int i2 = previewColor.g;
+        		int i3 = previewColor.b;
         		static int maxVal = 255; //TODO: get from manager based on current color displaying format
         								//TODO: get format for slider from manager based on color format as well.
         		static float sliderSize = 300;
@@ -237,6 +240,8 @@ public:
         		{
         			if (i1 > maxVal) i1 = maxVal;
         			if (i1 < 0) i1 = 0;
+
+        			mPreviewColorManager->UpdatePreviewColorFirstChannel(i1);
         		}
         		ImGui::SameLine(); ImGuiUtils::HelpMarker("CTRL+click to input value.");
         		ImGui::SetCursorPosX(ImGui::GetWindowSize().x / 2 - sliderSize / 2);
@@ -245,6 +250,8 @@ public:
         		{
         			if (i2 > maxVal) i2 = maxVal;
         			if (i2 < 0) i2 = 0;
+
+        			mPreviewColorManager->UpdatePreviewColorSecondChannel(i2);
         		}
         		ImGui::SetCursorPosX(ImGui::GetWindowSize().x / 2 - sliderSize / 2);
         		ImGui::PushItemWidth(sliderSize);
@@ -252,6 +259,8 @@ public:
         		{
         			if (i3 > maxVal) i3 = maxVal;
         			if (i3 < 0) i3 = 0;
+
+        			mPreviewColorManager->UpdatePreviewColorThirdChannel(i3);
         		}
 
         		ImGuiUtils::CustomSpacing(3);
@@ -259,7 +268,7 @@ public:
         		ImGui::PushStyleColor(ImGuiCol_Border, ImColor(110, 110, 128, 255).Value);
         		if (ImGui::Button("Copy Preview Color", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y)))
         		{
-        			
+        			ImGuiUtils::CopyColorToClipboard(mPreviewColorManager->GetPreviewColor());
         		}
         		ImGui::PopStyleVar();
         		ImGui::PopStyleColor();
@@ -363,6 +372,7 @@ private:
 	std::shared_ptr<Managers::CursorManager> mCursorManager;
 	std::shared_ptr<Managers::AppBehaviourManager> mAppBehaviourManager;
 	std::shared_ptr<Managers::CursorPosRenderManager> mCursorPosRenderManager;
+	std::shared_ptr<Managers::PreviewColorManager> mPreviewColorManager;
 };
 
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
@@ -382,6 +392,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	managerLocator.registerInstance<ColorsManager>(new ColorsManager);
 	managerLocator.registerInstance<AppBehaviourManager>(new AppBehaviourManager);
 	managerLocator.registerInstance<CursorPosRenderManager>(new CursorPosRenderManager(managerLocator.resolve<CursorManager>()));
+	managerLocator.registerInstance<PreviewColorManager>(new PreviewColorManager);
 	
 	Walnut::Application* app = new Walnut::Application(spec);
 	std::shared_ptr<ColorPickerLayer> mainLayer = std::make_shared<ColorPickerLayer>(managerLocator);

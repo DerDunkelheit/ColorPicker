@@ -51,7 +51,7 @@ namespace Managers
 
     ImVec4 StyleManager::GetColorThemeBasedOnColor(const Objects::Color& color)
     {
-        if (color.r > 200 || color.g > 200 || color.b > 200)
+        if (color.r > 220 || color.g > 220 || color.b > 220)
         {
             return {0,0,0, 255};
         }
