@@ -1,6 +1,6 @@
 ﻿#include "ColorsManager.h"
 
-#include <assert.h>
+#include <cassert>
 #include <filesystem>
 
 #include "Objects/Objects.h"
@@ -11,6 +11,14 @@ namespace Managers
     ColorsManager::ColorsManager()
     {
        Load();
+    }
+
+    const Objects::Color& ColorsManager::GetSelectedColor() const
+    {
+        assert(mPickedColors.size() > 0);
+        assert(mSelectedColorIndex >= 0);
+
+        return mPickedColors[mSelectedColorIndex];
     }
 
     bool ColorsManager::CanClearColors() const

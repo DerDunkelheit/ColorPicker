@@ -44,6 +44,7 @@ namespace Managers
         style.Colors[ImGuiCol_SliderGrabActive] = ImColor(128, 128, 128);
 
         style.FrameRounding = 6;
+        style.GrabRounding = 6;
 
         style.ScrollbarSize = 10;
     }

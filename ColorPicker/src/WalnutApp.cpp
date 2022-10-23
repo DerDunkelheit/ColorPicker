@@ -120,15 +120,7 @@ public:
                 		ImGui::Text("This a popup for %d, %d, %d", currentColor.r, currentColor.g, currentColor.b);
                 		if (ImGui::Button("Copy to clipboard"))
                 		{
-                			ImGui::LogToClipboard();
-
-                			char copiedBuf[64];
-                			currentColor.HasComment() ?
-                				sprintf_s(copiedBuf, "%d, %d, %d, %s", currentColor.r, currentColor.g, currentColor.b, currentColor.comment.c_str())
-                			    : sprintf_s(copiedBuf, "%d, %d, %d", currentColor.r, currentColor.g, currentColor.b);
-                			
-                			ImGui::LogText(copiedBuf);
-                			ImGui::LogFinish();
+                			ImGuiUtils::CopyColorToClipboard(currentColor);
                 			
                 			ImGui::CloseCurrentPopup();	
                 		}
@@ -195,9 +187,23 @@ public:
             ImGui::SameLine();
         	ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1);
         	ImGui::PushStyleColor(ImGuiCol_Border, ImColor(110, 110, 128, 255).Value);
-            if ( ImGui::Button("Copy value", ImVec2(ImGui::GetContentRegionAvail().x, 25))) { }
+        	if (mColorsManager->GetSelectedColorIndex() < 0)
+        	{
+        		ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+        		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+        	}
+            if (ImGui::Button("Copy value", ImVec2(ImGui::GetContentRegionAvail().x, 25)))
+            {
+            	ImGuiUtils::CopyColorToClipboard(mColorsManager->GetSelectedColor());
+            }
         	ImGui::PopStyleVar();
         	ImGui::PopStyleColor();
+
+        	if (mColorsManager->GetSelectedColorIndex() < 0)
+        	{
+        		ImGui::PopItemFlag();
+        		ImGui::PopStyleVar();
+        	}
             ImGuiUtils::CustomSpacing(5);
             ImGui::Separator();
 			//-------------------------------------------------------------------

@@ -15,6 +15,7 @@ namespace Managers
         ColorsManager();
 
         const std::vector<Objects::Color> GetPickedColors() const { return mPickedColors; }
+        const Objects::Color& GetSelectedColor() const;
         int GetSelectedColorIndex() const { return mSelectedColorIndex; }
         bool CanClearColors() const;
         bool CanOpenTextWindow() const { return mPickedColors.size() > 1; }

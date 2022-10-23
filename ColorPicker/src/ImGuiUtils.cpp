@@ -1,6 +1,9 @@
 ﻿#include "ImGuiUtils.h"
 
+#include <iostream>
+
 #include "imgui.h"
+#include "Objects/Objects.h"
 
 namespace ImGuiUtils
 {
@@ -54,5 +57,18 @@ namespace ImGuiUtils
             ImGui::PopTextWrapPos();
             ImGui::EndTooltip();
         }
+    }
+
+    void CopyColorToClipboard(const Objects::Color& color)
+    {
+        ImGui::LogToClipboard();
+        
+        char copiedBuf[64];
+        color.HasComment() ?
+            sprintf_s(copiedBuf, "%d, %d, %d, %s", color.r, color.g, color.b, color.comment.c_str())
+            : sprintf_s(copiedBuf, "%d, %d, %d", color.r, color.g, color.b);
+                			
+        ImGui::LogText(copiedBuf);
+        ImGui::LogFinish();
     }
 }
