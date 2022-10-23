@@ -72,7 +72,7 @@ public:
 
         	const auto& colorPreviewInfo = mStyleManager->GetColorPreviewUIInfo();
 		   	ImGui::ColorButton("MyColor", ImVec4((float)color.r / 255, (float)color.g / 255, (float)color.b / 255, 255),
-		   		0,ImVec2(colorPreviewInfo.mXSize, colorPreviewInfo.mYSize));
+		   		ImGuiColorEditFlags_NoTooltip,ImVec2(colorPreviewInfo.mXSize, colorPreviewInfo.mYSize));
 
             ImGui::SameLine();
         	const auto& zoomRegionUIInfo = mStyleManager->GetZoomRegionUIInfo();
