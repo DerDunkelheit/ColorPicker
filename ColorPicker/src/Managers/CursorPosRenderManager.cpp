@@ -1,25 +1,53 @@
 #include "CursorPosRenderManager.h"
-#include "CursorManager.h"
 
-#include "Walnut/Image.h"
-#include "Walnut/Random.h"
-#include "Walnut/Timer.h"
+#include <Walnut/Image.h>
+#include <atlimage.h>
+#include <filesystem>
 
 #include "Objects/Objects.h"
+#include "Walnut/Timer.h"
 
 namespace Managers
 {
-    CursorPosRenderManager::CursorPosRenderManager(std::shared_ptr<Managers::CursorManager> cursorManager)
-        : mCursorManager(cursorManager) {}
-
-    CursorPosRenderManager::CursorPosRenderManager()
-    {
-        
-    }
+    static const char* IMAGE_NAME = "mousePos.png";
+    
+    CursorPosRenderManager::CursorPosRenderManager() {}
 
     CursorPosRenderManager::~CursorPosRenderManager()
     {
         CleanUpResources();
+    }
+
+    void CursorPosRenderManager::Init(Objects::PerformanceWindowData* windowData)
+    {
+        //TODO: check if image file exists.
+        mPerformanceWindowData = windowData;
+        mImage = std::make_shared<Walnut::Image>(IMAGE_NAME);
+    }
+
+    void CursorPosRenderManager::CaptureScreen(const Objects::CursorPoint& point)
+    {
+        //TODO: bad way. we save image to file every frame.
+        // TODO: try to use bitmap directly to imageData
+        Walnut::Timer saveImageTimer;
+        HDC hScreenDC = GetDC(nullptr);
+        HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
+        int width = GetDeviceCaps(hScreenDC,HORZRES);
+        int height = GetDeviceCaps(hScreenDC,VERTRES);
+        int customSize = 120;
+        HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, customSize, customSize);
+        HBITMAP hOldBitmap = static_cast<HBITMAP>(SelectObject(hMemoryDC, hBitmap));
+        BitBlt(hMemoryDC, 0, 0, customSize, customSize, hScreenDC, point.x - customSize / 2, point.y - customSize / 2, SRCCOPY);
+        hBitmap = static_cast<HBITMAP>(SelectObject(hMemoryDC, hOldBitmap));
+
+        CImage image;
+        image.Attach(hBitmap);
+        image.Save(L"mousePos.png");
+
+        DeleteDC(hMemoryDC);
+        DeleteDC(hScreenDC);
+
+        mPerformanceWindowData->captureScreenTime = saveImageTimer.Elapsed();
     }
 
     void CursorPosRenderManager::CleanUpResources()
@@ -27,46 +55,9 @@ namespace Managers
         mImage.reset();
     }
 
-    uint32_t PerPixel(glm::vec2 coord)
-    {
-        auto test = Walnut::Random::UInt();
-        test |= 0xff000000;
-
-        return test;
-    }
-
     void CursorPosRenderManager::RenderMousePosition(const Objects::CursorPoint& cursorPoint)
     {
-        Walnut::Timer timer;
-		
-        if (mImage == nullptr || mViewportWidth != mImage->GetWidth() || mViewportHeight != mImage->GetHeight())
-        {
-            mImage = std::make_shared<Walnut::Image>(mViewportWidth, mViewportHeight, Walnut::ImageFormat::RGBA);
-            delete[] mImageData;
-            mImageData = new uint32_t[mViewportWidth * mViewportHeight];
-        }
-
-        // Iteration through all pixels
-        for (uint32_t y = 0; y < mImage->GetHeight(); y++)
-        {
-            for (uint32_t x = 0; x < mImage->GetWidth(); x++)
-            {
-                //glm::vec2 coord = { (float)x / (float)mImage->GetWidth(), (float)y / (float)mImage->GetHeight() };
-
-                //Objects::CursorPoint currentPoint;
-                //TODO: we cannot do it each frame. we have to replace it to different thread
-                //mCursorManager->FillCursorPoint(currentPoint);
-                
-                //Get color in rgb for pixel with x and y coord.
-                uint32_t colorForPixel = Walnut::Random::UInt();
-                colorForPixel |= 0xff000000;
-                mImageData[x + y * mImage->GetWidth()] = colorForPixel;
-            }
-        }
-        
-        mImage->SetData(mImageData);
-
-        mLastRenderTime = timer.ElapsedMillis();
-        auto a = mLastRenderTime;
+        CaptureScreen(cursorPoint);
+        mImage->SetImageData(IMAGE_NAME);
     }
 }

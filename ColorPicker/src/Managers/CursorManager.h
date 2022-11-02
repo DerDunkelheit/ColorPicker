@@ -5,6 +5,7 @@
 namespace Objects
 {
     struct CursorPoint;
+    struct PerformanceWindowData;
 }
 
 namespace Managers
@@ -13,12 +14,14 @@ namespace Managers
     {
     public:
         CursorManager();
-        
-        //TODO: to separate header.
+
+        void Init(Objects::PerformanceWindowData* windowData);
         
         void FillCursorPoint(Objects::CursorPoint& pointOut) const;
 
     private:
+        Objects::PerformanceWindowData* mPerformanceWindowData = nullptr;
+        
         HDC hDC = nullptr;
     };
 }

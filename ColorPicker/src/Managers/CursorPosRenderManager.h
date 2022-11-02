@@ -10,11 +10,7 @@ namespace Walnut
 namespace Objects
 {
     struct CursorPoint;
-}
-
-namespace Managers
-{
-    class CursorManager;
+    struct PerformanceWindowData;
 }
 
 namespace Managers
@@ -22,10 +18,11 @@ namespace Managers
     class CursorPosRenderManager
     {
     public:
-        CursorPosRenderManager(std::shared_ptr<Managers::CursorManager> cursorManager);
         CursorPosRenderManager();
         ~CursorPosRenderManager();
 
+        void Init(Objects::PerformanceWindowData* windowData);
+        void CaptureScreen(const Objects::CursorPoint& point);
         void CleanUpResources();
 
         const Walnut::Image& GetImage() const { return *mImage; }
@@ -35,13 +32,9 @@ namespace Managers
         void RenderMousePosition(const Objects::CursorPoint& cursorPoint);
         
     private:
+        Objects::PerformanceWindowData* mPerformanceWindowData = nullptr;
+        
         std::shared_ptr<Walnut::Image> mImage;
         uint32_t* mImageData = nullptr;
-        uint32_t mViewportWidth = 120;
-        uint32_t mViewportHeight = 120;
-
-        float mLastRenderTime = 0.0f;
-
-        std::shared_ptr<Managers::CursorManager> mCursorManager;
     };
 }

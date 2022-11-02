@@ -28,4 +28,10 @@ namespace Objects
 
         Color color;
     };
+
+    struct PerformanceWindowData
+    {
+        float captureScreenTime = 0.0f;
+        float FillCursorPointTime = 0.0f;
+    };
 }

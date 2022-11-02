@@ -84,6 +84,25 @@ namespace Walnut {
 		Release();
 	}
 
+	void Image::SetImageData(std::string_view path)
+	{
+		//TODO: not sure if it's the right way.
+		int width, height, channels;
+		uint8_t* data = nullptr;
+		if (stbi_is_hdr(m_Filepath.c_str()))
+		{
+			data = (uint8_t*)stbi_loadf(m_Filepath.c_str(), &width, &height, &channels, 4);
+			m_Format = ImageFormat::RGBA32F;
+		}
+		else
+		{
+			data = stbi_load(m_Filepath.c_str(), &width, &height, &channels, 4);
+			m_Format = ImageFormat::RGBA;
+		}
+
+		SetData(data);
+	}
+
 	void Image::AllocateMemory(uint64_t size)
 	{
 		VkDevice device = Application::GetDevice();

@@ -20,6 +20,7 @@ namespace Walnut {
 		Image(uint32_t width, uint32_t height, ImageFormat format, const void* data = nullptr);
 		~Image();
 
+		void SetImageData(std::string_view path);
 		void SetData(const void* data);
 
 		VkDescriptorSet GetDescriptorSet() const { return m_DescriptorSet; }

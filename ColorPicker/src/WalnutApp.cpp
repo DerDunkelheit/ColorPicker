@@ -23,13 +23,25 @@
 #include "Managers/PreviewColorManager.h"
 
 // Windows
-static bool isDemoWindowOpened = false;
 static bool isGuidWindowOpened = false;
 static bool isAboutWindowOpened = false;
 static bool isTextWindowOpened = false;
+static bool isPerformanceWindowOpened = false;
+
+#ifdef WL_DEBUG
+static bool isDemoWindowOpened = false;
+#endif
 
 // Popups
 static bool isColorCommentPopup = false;
+
+static uint32_t allocCount = 0;
+void* operator new (size_t size)
+{
+	allocCount++;
+	std::cout << "Allocation " << size << " bytes\n";
+	return malloc(size);
+}
 
 class ColorPickerLayer : public Walnut::Layer
 {
@@ -48,6 +60,8 @@ public:
 	virtual void OnAttach() override
 	{
 		mStyleManager->SetAppLookPreferences();
+		mCursorManager->Init(&mPerformanceWindowData);
+		mCursorPosRenderManager->Init(&mPerformanceWindowData);
 	}
 
 	virtual void OnDetach() override
@@ -60,14 +74,13 @@ public:
 	{
         ImGui::Begin("ColorPicker", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNavInputs);
         {
-        	Objects::CursorPoint cursorPoint;
-        	mCursorManager->FillCursorPoint(cursorPoint);
+        	mCursorManager->FillCursorPoint(mCursorPoint);
         	
 	        char buf[64];
-	        sprintf_s(buf, "[%d, %d]", cursorPoint.x, cursorPoint.y);
+	        sprintf_s(buf, "[%d, %d]", mCursorPoint.x, mCursorPoint.y);
 	        
 		    char colorBuf[64];
-        	Objects::Color color = cursorPoint.color;
+        	const Objects::Color& color = mCursorPoint.color;
 		    sprintf_s(colorBuf, "%d, %d, %d", color.r, color.g, color.b);
 
         	const auto& colorPreviewInfo = mStyleManager->GetColorPreviewUIInfo();
@@ -80,7 +93,7 @@ public:
             ImGui::BeginChild("##ZoomField", ImVec2(zoomRegionUIInfo.mXSize, zoomRegionUIInfo.mYSize), true);
             {
         		//TODO: nice to have: we can create a separate window with rendering of cursor pos with custom zooming and ability to freeze position.
-        		mCursorPosRenderManager->RenderMousePosition(cursorPoint);
+        		mCursorPosRenderManager->RenderMousePosition(mCursorPoint);
         		
         		if (mCursorPosRenderManager->HasImage())
         		{
@@ -90,6 +103,14 @@ public:
 		                             static_cast<float>(renderImage.GetHeight())
 	                             });
         		}
+
+                const ImVec2 window_pos = ImGui::GetWindowPos();
+                const ImVec2 window_size = ImGui::GetWindowSize();
+                const ImVec2 window_center = ImVec2(window_pos.x + window_size.x * 0.5f, window_pos.y + window_size.y * 0.5f);
+        		ImGui::GetForegroundDrawList()->AddLine(ImVec2(window_center.x - zoomRegionUIInfo.mXSize / 2, window_center.y),
+        			ImVec2(window_center.x + zoomRegionUIInfo.mXSize / 2, window_center.y),IM_COL32(255, 0, 0, 200), 1);
+        		ImGui::GetForegroundDrawList()->AddLine(ImVec2(window_center.x, window_center.y - zoomRegionUIInfo.mXSize / 2),
+					ImVec2(window_center.x, window_center.y + zoomRegionUIInfo.mXSize / 2),IM_COL32(255, 0, 0, 200), 1);
             }
         	ImGui::PopStyleVar();
         	ImGui::EndChild();
@@ -103,13 +124,13 @@ public:
                 for (int i = 0; i < mColorsManager->GetPickedColors().size(); i++)
                 {
 	                const bool selected = mColorsManager->GetSelectedColorIndex() == i;
-                	auto pickedColors = mColorsManager->GetPickedColors();
+                	const auto& pickedColors = mColorsManager->GetPickedColors();
                     const Objects::Color& currentColor = pickedColors[i];
-
-                	//todo: string in render loop.
-                    std::string label = "##" + std::to_string(i);
+                	
+                	char selectableLabel[64];
+                	sprintf_s(selectableLabel, "## %d", i);
                     
-                    if (ImGui::Selectable(label.data()))
+                    if (ImGui::Selectable(selectableLabel))
                     {
                         mColorsManager->SetSelectedColor(i);
                     	mPreviewColorManager->SetPreviewColor(pickedColors[i]);
@@ -212,7 +233,7 @@ public:
 
         	ImGui::BeginChild("##PreviewColorRegion", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
         	{
-        		Objects::Color previewColor = mPreviewColorManager->GetPreviewColor();
+	            const Objects::Color& previewColor = mPreviewColorManager->GetPreviewColor();
         		ImGui::ColorButton("PreviewColor", ImVec4((float)previewColor.r /255, (float)previewColor.g/255, (float)previewColor.b/ 255, 255),
 				   0,ImVec2(96, 54));
 
@@ -316,10 +337,13 @@ public:
 		//-----------------------------------------------------------------
 
 		// Another windows-------------------------------------------------
+#ifdef WL_DEBUG
 		if (isDemoWindowOpened)
 		{
 			ImGui::ShowDemoWindow(&isDemoWindowOpened);
 		}
+#endif
+		
 		if (isGuidWindowOpened)
 		{
 			RenderUtils::RenderGuideWindow(&isGuidWindowOpened);
@@ -331,6 +355,10 @@ public:
 		if (isTextWindowOpened)
 		{
 			RenderUtils::RenderTextWindow(&isTextWindowOpened);
+		}
+		if (isPerformanceWindowOpened)
+		{
+			RenderUtils::RenderPerformanceWindow(&isPerformanceWindowOpened, mPerformanceWindowData);
 		}
 		//-----------------------------------------------------------------
 	}
@@ -357,16 +385,16 @@ private:
 		//TODO: input listening even on minimized window.
 		if (keyPressed.GetKeyCode() == static_cast<int32_t>(Walnut::KeyCode::X))
 		{
-			Objects::CursorPoint cursorPoint;
-			mCursorManager->FillCursorPoint(cursorPoint);
-
-			mColorsManager->AddPickedColor(cursorPoint.color);
+			mColorsManager->AddPickedColor(mCursorPoint.color);
 		}
 
 		return handled;
 	}
 	
 private:
+	Objects::PerformanceWindowData mPerformanceWindowData;
+	Objects::CursorPoint mCursorPoint;
+	
 	std::shared_ptr<Managers::StyleManager> mStyleManager;
 	std::shared_ptr<Managers::ColorsManager> mColorsManager;
 	std::shared_ptr<Managers::CursorManager> mCursorManager;
@@ -391,7 +419,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	managerLocator.registerInstance<CursorManager>(new CursorManager);
 	managerLocator.registerInstance<ColorsManager>(new ColorsManager);
 	managerLocator.registerInstance<AppBehaviourManager>(new AppBehaviourManager);
-	managerLocator.registerInstance<CursorPosRenderManager>(new CursorPosRenderManager(managerLocator.resolve<CursorManager>()));
+	managerLocator.registerInstance<CursorPosRenderManager>(new CursorPosRenderManager());
 	managerLocator.registerInstance<PreviewColorManager>(new PreviewColorManager);
 	
 	Walnut::Application* app = new Walnut::Application(spec);
@@ -413,6 +441,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 				WindowFlagEvent flagEvent("StayOnTop", isStayOnTop);
 				app->OnEvent(flagEvent);
 			}
+			ImGui::MenuItem("Show performance window", nullptr, &isPerformanceWindowOpened);
 			if (ImGui::MenuItem("Exit"))
 			{
 				app->Close();
@@ -437,7 +466,6 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			{
 				colorsManager->SaveAutoSaveColorsList();
 			}
-			int a = 5;
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Help"))

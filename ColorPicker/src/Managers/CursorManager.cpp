@@ -1,6 +1,7 @@
 ﻿#include "CursorManager.h"
 
 #include "Objects/Objects.h"
+#include "Walnut/Timer.h"
 
 namespace Managers
 {
@@ -13,9 +14,15 @@ namespace Managers
         }
     }
 
+    void CursorManager::Init(Objects::PerformanceWindowData* windowData)
+    {
+        mPerformanceWindowData = windowData;
+    }
+
     void CursorManager::FillCursorPoint(Objects::CursorPoint& pointOut) const
     {
         POINT point;
+        Walnut::Timer timer;
         if (GetCursorPos(&point))
         {
             COLORREF color;
@@ -39,5 +46,6 @@ namespace Managers
         {
             __debugbreak();
         }
+        mPerformanceWindowData->FillCursorPointTime = timer.Elapsed();
     }
 }

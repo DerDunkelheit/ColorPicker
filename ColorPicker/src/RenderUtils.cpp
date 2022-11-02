@@ -1,6 +1,7 @@
 ﻿#include "RenderUtils.h"
 
 #include "ImGuiUtils.h"
+#include "Objects/Objects.h"
 
 namespace RenderUtils
 {
@@ -50,6 +51,16 @@ namespace RenderUtils
                 ImGui::PopFont();
             }
             ImGui::EndChild();
+        }
+        ImGui::End();
+    }
+
+    void RenderPerformanceWindow(bool* p_open, const Objects::PerformanceWindowData& windowData)
+    {
+        ImGui::Begin("Performance", p_open, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse);
+        {
+            ImGui::Text("CaptureScreen() time: %.8f", windowData.captureScreenTime);
+            ImGui::Text("FillCursorPoint() time: %.8f", windowData.FillCursorPointTime);
         }
         ImGui::End();
     }
