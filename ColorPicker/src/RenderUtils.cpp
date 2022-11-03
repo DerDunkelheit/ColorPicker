@@ -10,7 +10,12 @@ namespace RenderUtils
     {
         ImGui::Begin("Guide", p_open, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse);
         {
-            
+            ImGui::TextWrapped(
+                "This app allows you to select and manipulate with colors on pixels on your screen.\n\n"
+                "Hotkeys: 'X' for adding color on mouse position to the colors list.\n\n"
+                "You can press right mouse button while hovering the colors in the color list to see additional options, such as adding a comment, copying selected color to clipboard\n\n"
+                "When you select a certain color from the list, you can manually edit this color in the panel below. This changes doesn't affect the color in the list\n\n"
+                "By default all changes in color list are automatically saved after any action from a user. You can change this behaviour in the options");
         }
         ImGui::End();
     }

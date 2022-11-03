@@ -1,6 +1,6 @@
 ﻿#include "SaveLoadUtils.h"
 
-#include <assert.h>
+#include <cassert>
 #include <iostream>
 
 #include "ColorsUtils.h"

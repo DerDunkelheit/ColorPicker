@@ -17,6 +17,10 @@
 #include <iostream>
 
 // Emedded font
+#include <cassert>
+#include <filesystem>
+#include <stb_image.h>
+
 #include "Event.h"
 #include "GLFWWindowEvents.h"
 #include "imgui_internal.h"
@@ -426,6 +430,17 @@ namespace Walnut {
 		m_WindowHandle = glfwCreateWindow(m_Specification.Width, m_Specification.Height, m_Specification.Name.c_str(), NULL, NULL);
 
 		glfwSetWindowUserPointer(m_WindowHandle, &m_Specification);
+
+		// set app image.
+		assert(std::filesystem::exists("AppThumbnail.png"));
+		if (std::filesystem::exists("AppThumbnail.png"))
+		{
+			std::string imagePath = "AppThumbnail.png";
+			GLFWimage windowImage;
+			windowImage.pixels = stbi_load(imagePath.c_str(), &windowImage.width, &windowImage.height, 0, 4);
+			glfwSetWindowIcon(m_WindowHandle, 1, &windowImage);
+			stbi_image_free(windowImage.pixels);
+		}
 
 		//Not sure if it's the right approach
 		SetEventCallback(BIND_EVENT_FN(Application::OnEvent));
