@@ -31,6 +31,11 @@ namespace Managers
         assert(mPickedColors.size() > index);
 
         mPickedColors.erase(mPickedColors.begin() + index);
+
+        if (mAutoSaveColorsList)
+        {
+            SaveLoadUtils::SaveColorsVector(mPickedColors);
+        }
     }
 
     void ColorsManager::ClearPickedColors()
@@ -39,10 +44,18 @@ namespace Managers
 
         SetSelectedColor(0);
 
-        SaveLoadUtils::ClearColorsVector();
+        if (mAutoSaveColorsList)
+        {
+            SaveLoadUtils::ClearColorsVector();
+        }
     }
 
-    void ColorsManager::AddPickedColor(Objects::Color color)
+    void ColorsManager::SaveColorList() const
+    {
+        SaveLoadUtils::SaveColorsVector(mPickedColors);
+    }
+
+    void ColorsManager::AddPickedColor(const Objects::Color& color)
     {
         mPickedColors.push_back(color);
 
@@ -68,7 +81,7 @@ namespace Managers
         SaveLoadUtils::SaveColorsVector(mPickedColors);
     }
 
-    void ColorsManager::SaveAutoSaveColorsList()
+    void ColorsManager::SaveAutoSaveColorsList() const
     {
        SaveLoadUtils::WriteValue<bool>("managers", "AutoSave", mAutoSaveColorsList);
     }

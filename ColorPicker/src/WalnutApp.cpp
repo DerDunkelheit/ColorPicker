@@ -448,24 +448,29 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			}
 			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("Color List"))
+		{
+			auto colorsManager = managerLocator.resolve<ColorsManager>();
+			if (ImGui::MenuItem("Auto Save", nullptr, colorsManager->GetAutoSaveColorsListMemory()))
+			{
+				colorsManager->SaveAutoSaveColorsList();
+			}
+			if (ImGui::MenuItem("Save List"))
+			{
+				colorsManager->SaveColorList();
+			}
+			if (ImGui::MenuItem("Clear All",nullptr, nullptr, colorsManager->CanClearColors()))
+			{
+				colorsManager->ClearPickedColors();
+			}
+			
+			ImGui::EndMenu();
+		}
 		if (ImGui::BeginMenu("Tools"))
 		{
 			auto colorsManager = managerLocator.resolve<ColorsManager>();
 			ImGui::MenuItem("Text", nullptr, &isTextWindowOpened, colorsManager->CanOpenTextWindow());
 			
-			ImGui::EndMenu();
-		}
-		if (ImGui::BeginMenu("Color List"))
-		{
-			auto colorsManager = managerLocator.resolve<ColorsManager>();
-			if (ImGui::MenuItem("Clear All",nullptr, nullptr, colorsManager->CanClearColors()))
-			{
-				colorsManager->ClearPickedColors();
-			}
-			if (ImGui::MenuItem("Auto Save", nullptr, colorsManager->GetAutoSaveColorsListMemory()))
-			{
-				colorsManager->SaveAutoSaveColorsList();
-			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Help"))

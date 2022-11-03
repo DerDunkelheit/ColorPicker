@@ -24,11 +24,12 @@ namespace Managers
 
         void RemoveColor(int index);
         void ClearPickedColors();
-        void AddPickedColor(Objects::Color color);
+        void SaveColorList() const;
+        void AddPickedColor(const Objects::Color& color);
         void SetSelectedColor(int index);
         void CommentSelectedColor(const char* comment);
         
-        void SaveAutoSaveColorsList();
+        void SaveAutoSaveColorsList() const;
 
     private:
         void Load();
