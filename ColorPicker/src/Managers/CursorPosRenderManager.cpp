@@ -3,15 +3,15 @@
 #include <Walnut/Image.h>
 #include <atlimage.h>
 #include <filesystem>
+#include <Walnut/Timer.h>
 
 #include "Objects/Objects.h"
-#include "Walnut/Timer.h"
 
 namespace Managers
 {
     static const char* IMAGE_NAME = "mousePos.png";
     
-    CursorPosRenderManager::CursorPosRenderManager() {}
+    CursorPosRenderManager::CursorPosRenderManager() = default;
 
     CursorPosRenderManager::~CursorPosRenderManager()
     {
@@ -20,8 +20,13 @@ namespace Managers
 
     void CursorPosRenderManager::Init(Objects::PerformanceWindowData* windowData)
     {
-        //TODO: check if image file exists.
         mPerformanceWindowData = windowData;
+
+        if (!std::filesystem::exists(IMAGE_NAME))
+        {
+            CaptureScreen({0, 0});
+        }
+        
         mImage = std::make_shared<Walnut::Image>(IMAGE_NAME);
     }
 

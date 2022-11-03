@@ -43,6 +43,10 @@ namespace Managers
         style.Colors[ImGuiCol_SliderGrab] = ImColor(115, 115, 115);
         style.Colors[ImGuiCol_SliderGrabActive] = ImColor(128, 128, 128);
 
+        style.Colors[ImGuiCol_ResizeGrip] = ImColor(35,35,35);
+        style.Colors[ImGuiCol_ResizeGripHovered] = ImColor(50, 50, 50);
+        style.Colors[ImGuiCol_ResizeGripActive] = ImColor(60, 60, 60);
+
         style.FrameRounding = 6;
         style.GrabRounding = 6;
 

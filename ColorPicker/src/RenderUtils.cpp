@@ -1,6 +1,7 @@
 ﻿#include "RenderUtils.h"
 
 #include "ImGuiUtils.h"
+#include "Utils.h"
 #include "Objects/Objects.h"
 
 namespace RenderUtils
@@ -18,13 +19,34 @@ namespace RenderUtils
     {
         ImGui::Begin("About", p_open, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse);
         {
-            
+            ImGuiUtils::TextCentered("Author: Aleksandr Samarin");
+            ImGui::Selectable("Project Github page: github.com/DerDunkelheit/ColorPicker");
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Click to open, right click to copy URL");
+
+                if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+                {
+                    Utils::OpenWebPage("https://github.com\\DerDunkelheit\\ColorPicker");
+                }
+                else if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+                {
+                    ImGui::LogToClipboard();
+                    ImGui::LogText("github.com/DerDunkelheit/ColorPicker");
+                    ImGui::LogFinish();
+                }
+            }
+            ImGui::Spacing();
+            ImGui::TextWrapped(
+                "It was a hobby/learning project with an aim to get smooth image preview capturing when picking a color."
+                "This project was also a place to implement and test new techies and approaches in programming with C++");
         }
         ImGui::End();
     }
 
     void RenderTextWindow(bool* p_open)
     {
+        //TODO: finish this idea.
         ImGui::Begin("Text", p_open, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse);
         {
             ImGuiIO& io = ImGui::GetIO();

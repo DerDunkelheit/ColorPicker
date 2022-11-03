@@ -35,6 +35,10 @@ static bool isDemoWindowOpened = false;
 // Popups
 static bool isColorCommentPopup = false;
 
+//General todos:
+//TODO: maybe implement a localization support.
+//TODO: try to refactor this file to make it smaller.
+
 static uint32_t allocCount = 0;
 void* operator new (size_t size)
 {
@@ -431,10 +435,6 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		{
 #ifdef WL_DEBUG
 			ImGui::MenuItem("ShowDemoWindow", nullptr, &isDemoWindowOpened);
-			if (ImGui::MenuItem("Test"))
-			{
-				managerLocator.resolve<ColorsManager>()->SetSelectedColor(2);
-			}
 #endif // WL_DEBUG
 			if (ImGui::MenuItem("Stay on Top", nullptr, &isStayOnTop))
 			{
