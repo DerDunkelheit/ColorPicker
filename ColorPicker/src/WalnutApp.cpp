@@ -43,8 +43,17 @@ static uint32_t allocCount = 0;
 void* operator new (size_t size)
 {
 	allocCount++;
+#ifdef WL_DEBUG
 	std::cout << "Allocation " << size << " bytes\n";
+#endif
 	return malloc(size);
+}
+
+static uint32_t deleteCount = 0;
+void operator delete (void* memory, size_t size)
+{
+	deleteCount++;
+	free(memory);
 }
 
 class ColorPickerLayer : public Walnut::Layer

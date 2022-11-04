@@ -37,8 +37,8 @@ namespace Managers
         Walnut::Timer saveImageTimer;
         HDC hScreenDC = GetDC(nullptr);
         HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
-        int width = GetDeviceCaps(hScreenDC,HORZRES);
-        int height = GetDeviceCaps(hScreenDC,VERTRES);
+        //int width = GetDeviceCaps(hScreenDC,HORZRES);
+        //int height = GetDeviceCaps(hScreenDC,VERTRES);
         int customSize = 120;
         HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, customSize, customSize);
         HBITMAP hOldBitmap = static_cast<HBITMAP>(SelectObject(hMemoryDC, hBitmap));
@@ -51,6 +51,8 @@ namespace Managers
 
         DeleteDC(hMemoryDC);
         DeleteDC(hScreenDC);
+        DeleteObject(hBitmap);
+        DeleteObject(hOldBitmap);
 
         mPerformanceWindowData->captureScreenTime = saveImageTimer.Elapsed();
     }
